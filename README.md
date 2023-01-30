@@ -1,3 +1,9 @@
+# Docker
+
+Build the docker image using the below command while in the same directory as Dockerfile: 
+
+```docker build -t your/repo:tag .```
+
 Example Discord bot written in Python that uses the [completions API](https://beta.openai.com/docs/api-reference/completions) to have conversations with the `text-davinci-003` model, and the [moderations API](https://beta.openai.com/docs/api-reference/moderations) to filter the messages.
 
 This bot uses the [OpenAI Python Library](https://github.com/openai/openai-python) and [discord.py](https://discordpy.readthedocs.io/).
