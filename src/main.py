@@ -33,13 +33,14 @@ logging.basicConfig(
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+client = discord.AutoShardedClient(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 
 
 @client.event
 async def on_ready():
-    logger.info(f"We have logged in as {client.user}. Invite URL: {BOT_INVITE_URL}")
+    logger.info(
+        f"We have logged in as {client.user}. Invite URL: {BOT_INVITE_URL}")
     completion.MY_BOT_NAME = client.user.name
     completion.MY_BOT_EXAMPLE_CONVOS = []
     for c in EXAMPLE_CONVOS:
@@ -49,7 +50,8 @@ async def on_ready():
                 messages.append(Message(user=client.user.name, text=m.text))
             else:
                 messages.append(m)
-        completion.MY_BOT_EXAMPLE_CONVOS.append(Conversation(messages=messages))
+        completion.MY_BOT_EXAMPLE_CONVOS.append(
+            Conversation(messages=messages))
     await tree.sync()
 
 
@@ -74,7 +76,8 @@ async def chat_command(int: discord.Interaction, message: str):
         logger.info(f"Chat command by {user} {message[:20]}")
         try:
             # moderate the message
-            flagged_str, blocked_str = moderate_message(message=message, user=user)
+            flagged_str, blocked_str = moderate_message(
+                message=message, user=user)
             await send_moderation_blocked_message(
                 guild=int.guild,
                 user=user,
