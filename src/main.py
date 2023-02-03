@@ -155,7 +155,7 @@ async def chat_command(int: discord.Interaction, message: str):
 # calls for each message
 @client.event
 async def on_message(message: DiscordMessage):
-    lock = r.lock("message_lock:{}".format(message.id), timeout=20)
+    lock = r.lock("message_lock:{}".format(message.id), timeout=15)
     try:
         if lock.acquire(blocking=True):
             if r.get("message_responded:{}".format(message.id)):
