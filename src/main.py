@@ -161,8 +161,6 @@ async def on_message(message: DiscordMessage):
             if r.get("message_responded:{}".format(message.id)):
                 logger.info("message already handled by other instance")
                 return
-            else:
-                r.set("message_responded:{}".format(message.id), f"{message.id}")
 
             # block servers not in allow list
             if should_block(guild=message.guild):
@@ -279,6 +277,7 @@ async def on_message(message: DiscordMessage):
             await process_response(
                 user=message.author, thread=thread, response_data=response_data
             )
+            r.set("message_responded:{}".format(message.id), f"{message.id}")
     except Exception as e:
         logger.exception(e)
     finally:
