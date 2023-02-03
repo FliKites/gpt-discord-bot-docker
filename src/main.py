@@ -40,7 +40,11 @@ intents.message_content = True
 client = discord.AutoShardedClient(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 r = redis.Redis(
-    host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, health_check_interval=20
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD,
+    health_check_interval=20,
+    decode_responses=True,
 )
 
 
@@ -158,7 +162,7 @@ async def on_message(message: DiscordMessage):
                 logger.info("message already handled by other instance")
                 return
             else:
-                r.set("message_responded:{}".format(message.id), True)
+                r.set("message_responded:{}".format(message.id), f"{message.id}")
 
             # block servers not in allow list
             if should_block(guild=message.guild):
