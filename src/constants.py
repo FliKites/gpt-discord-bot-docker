@@ -22,6 +22,10 @@ DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 DISCORD_CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
+REDIS_HOST = os.environ["REDIS_HOST"]
+REDIS_PORT = os.environ["REDIS_PORT"] or 6379
+REDIS_PASSWORD = os.environ["REDIS_PASSWORD"]
+
 ALLOWED_SERVER_IDS: List[int] = []
 server_ids = os.environ["ALLOWED_SERVER_IDS"].split(",")
 for s in server_ids:

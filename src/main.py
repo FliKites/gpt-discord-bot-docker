@@ -1,4 +1,5 @@
 import discord
+import redis
 from discord import Message as DiscordMessage
 import logging
 from src.base import Message, Conversation
@@ -9,6 +10,9 @@ from src.constants import (
     ACTIVATE_THREAD_PREFX,
     MAX_THREAD_MESSAGES,
     SECONDS_DELAY_RECEIVING_MSG,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_PASSWORD,
 )
 import asyncio
 from src.utils import (
@@ -35,12 +39,14 @@ intents.message_content = True
 
 client = discord.AutoShardedClient(intents=intents)
 tree = discord.app_commands.CommandTree(client)
+r = redis.Redis(
+    host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, health_check_interval=20
+)
 
 
 @client.event
 async def on_ready():
-    logger.info(
-        f"We have logged in as {client.user}. Invite URL: {BOT_INVITE_URL}")
+    logger.info(f"We have logged in as {client.user}. Invite URL: {BOT_INVITE_URL}")
     completion.MY_BOT_NAME = client.user.name
     completion.MY_BOT_EXAMPLE_CONVOS = []
     for c in EXAMPLE_CONVOS:
@@ -50,8 +56,7 @@ async def on_ready():
                 messages.append(Message(user=client.user.name, text=m.text))
             else:
                 messages.append(m)
-        completion.MY_BOT_EXAMPLE_CONVOS.append(
-            Conversation(messages=messages))
+        completion.MY_BOT_EXAMPLE_CONVOS.append(Conversation(messages=messages))
     await tree.sync()
 
 
@@ -76,8 +81,7 @@ async def chat_command(int: discord.Interaction, message: str):
         logger.info(f"Chat command by {user} {message[:20]}")
         try:
             # moderate the message
-            flagged_str, blocked_str = moderate_message(
-                message=message, user=user)
+            flagged_str, blocked_str = moderate_message(message=message, user=user)
             await send_moderation_blocked_message(
                 guild=int.guild,
                 user=user,
@@ -147,7 +151,14 @@ async def chat_command(int: discord.Interaction, message: str):
 # calls for each message
 @client.event
 async def on_message(message: DiscordMessage):
+    lock = r.lock("message_lock:{}".format(message.id), timeout=20)
     try:
+        if r.get("message_responded:{}".format(message.id)):
+            logger.info("message already handled by other instance")
+            return
+        else:
+            r.set("message_responded:{}".format(message.id), True)
+
         # block servers not in allow list
         if should_block(guild=message.guild):
             return
@@ -265,6 +276,8 @@ async def on_message(message: DiscordMessage):
         )
     except Exception as e:
         logger.exception(e)
+    finally:
+        lock.release()
 
 
 client.run(DISCORD_BOT_TOKEN)
