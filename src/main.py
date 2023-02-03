@@ -40,7 +40,11 @@ intents.message_content = True
 client = discord.AutoShardedClient(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 r = redis.Redis(
-    host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, health_check_interval=20
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD,
+    health_check_interval=20,
+    decode_responses=True,
 )
 
 
@@ -151,14 +155,12 @@ async def chat_command(int: discord.Interaction, message: str):
 # calls for each message
 @client.event
 async def on_message(message: DiscordMessage):
-    lock = r.lock("message_lock:{}".format(message.id), timeout=20)
+    lock = r.lock("message_lock:{}".format(message.id), timeout=15)
     try:
-        if lock.acquire(blocking=False):
+        if lock.acquire(blocking=True):
             if r.get("message_responded:{}".format(message.id)):
                 logger.info("message already handled by other instance")
                 return
-            else:
-                r.set("message_responded:{}".format(message.id), True)
 
             # block servers not in allow list
             if should_block(guild=message.guild):
@@ -275,10 +277,14 @@ async def on_message(message: DiscordMessage):
             await process_response(
                 user=message.author, thread=thread, response_data=response_data
             )
+            r.set("message_responded:{}".format(message.id), f"{message.id}")
     except Exception as e:
         logger.exception(e)
     finally:
-        lock.release()
+        try:
+            lock.release()
+        except Exception as e:
+            logger.exception(e)
 
 
 client.run(DISCORD_BOT_TOKEN)
