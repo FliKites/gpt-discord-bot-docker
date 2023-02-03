@@ -157,7 +157,7 @@ async def chat_command(int: discord.Interaction, message: str):
 async def on_message(message: DiscordMessage):
     lock = r.lock("message_lock:{}".format(message.id), timeout=20)
     try:
-        if lock.acquire(blocking=False):
+        if lock.acquire(blocking=True):
             if r.get("message_responded:{}".format(message.id)):
                 logger.info("message already handled by other instance")
                 return
@@ -281,7 +281,10 @@ async def on_message(message: DiscordMessage):
     except Exception as e:
         logger.exception(e)
     finally:
-        lock.release()
+        try:
+            lock.release()
+        except Exception as e:
+            logger.exception(e)
 
 
 client.run(DISCORD_BOT_TOKEN)
